@@ -1,0 +1,157 @@
+## Investigation of Steps taken over Time
+This analysis looks at data received from a step counter. Every 5 minutes,
+the counter records the date, an interval number and the number of steps taken
+within that interval.
+
+### Downloading the data
+The raw data containing the date, interval numbers and the number of steps
+is downloaded from the web from this location:
+```
+https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip
+```
+
+Project questions will be answered based on this data.
+
+```{R initialization}
+dataFileURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+dataFileZip <- "proj1.download.zip"
+dataFile <- "activity.csv"
+
+if (!file.exists(dataFile)) {
+        if (!file.exists(dataFileZip)) {
+                print("Downloading Data Zip File")
+                if (download.file(dataFileURL, dataFileZip)) {
+                        stop(paste("Could not download data file <",
+                                   dataFileURL, "> to zip file <",
+                                   dataFileZip, ">", sep = ""))
+                }
+        }
+        print("Unzipping Data Source Files")
+        unzip(dataFileZip)
+        if (!file.exists(dataFile)) {
+                stop(paste("Could not unzip data zip file <", dataFileZip,
+                           "> to data files <", dataFile, ">.", sep = ""))
+        }
+        print("Data Files Successfully downloaded.")
+}
+
+df <- read.csv(dataFile, stringsAsFactors = FALSE)
+df$date <- as.Date(df$date)
+```
+
+Now that the data is loaded, we can look at the data in more detail and start
+answering the questions.
+
+### The Number of Steps Taken Each Day
+The first 3 steps look at the number of steps taken each day.
+
+**Step 1: Calculate the total number of steps taken per day**
+
+```{R numSteps}
+# Find the number of steps taken per day ignoring NAs
+spd <- aggregate(steps ~ date, df, FUN = sum, na.action = na.omit)
+```
+
+**Step 2: If you do not understand the difference between a histogram
+and a barplot, research the difference between them. Make a histogram
+of the total number of steps taken each day.**
+
+A histogram plots the number of times a single variable occurs in the data
+while a barplot plots the one variable in relation to another and shows the
+magnitude of that variable with a vertical or horizontal bar.
+
+This step is looking for a histogram of the number of steps taken each day.
+This will show a graph of how many times each sum appears in the data.
+
+```{R}
+hist(spd$steps,
+     breaks = 20,
+     main = "Frequency of Daily Step Counts",
+     xlab = "Daily Step Count"
+     )
+grid(col = "dark grey")
+```
+**Step 3: Calculate and report the mean and median of the total number of steps taken per day**
+
+```{R}
+meanSteps <- mean(spd$steps)
+medianSteps <- median(spd$steps)
+print(meanSteps)
+print(medianSteps)
+```
+The mean number of steps taken each day is
+about `r format(meanSteps, scientific = FALSE)` and the median number
+of steps taken each day is `r medianSteps`.
+
+### Average Daily Activity Pattern
+
+**Step 1: Make a time series plot (i.e. `type = "l"`) of the 5-minute
+interval (x-axis) and the average number of steps taken,
+averaged across all days (y-axis)**
+
+To do this, must first calculate the mean steps per interval:
+
+```{R}
+mspi <- aggregate(steps ~ interval, df, FUN = mean, na.action = na.omit)
+```
+
+Then we can plot a line showing the mean steps for each interval over all
+the intervals of the day.
+
+```{R}
+plot(mspi, type = "l",
+     xlab = "Daily 5 Minute Time Interval",
+     ylab = "Average Number of Steps Taken",
+     main = "Average Number of Steps Taken per Interval\nin each 5 Minute Interval over 60 Days"
+)
+```
+
+**Step 2: Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?**
+
+Find the interval where the average number of steps in that interval is
+the largest. 
+
+print(paste("On average, interval ",
+            mspi[mspi$steps == max(mspi$steps),]$interval,
+            " has the largest, average number of steps at ",
+            mspi[mspi$steps == max(mspi$steps),]$steps,
+            sep = "")
+      )
+
+print(paste("There are ", sum(is.na(df$steps)), " missing values.", sep = ""))
+
+df$stepsNoNA <- ifelse(is.na(df$steps), mspi$steps[match(df$interval, mspi$interval)], df$steps)
+
+spd <- aggregate(stepsNoNA ~ date, df, FUN = sum)
+hist(spd$stepsNoNA,
+     breaks = 20,
+     main = "Frequency of Daily Step Counts with Missing Data\nReplaced with Mean for that Interval",
+     xlab = "Daily Step Count"
+)
+grid(col = "dark grey")
+print(paste("mean of steps (with NA replacement): ", mean(spd$stepsNoNA),
+            " median of steps (with NA replacement): ", median(spd$stepsNoNA),
+            sep = ""))
+
+df$daytype <- ifelse(weekdays(df$date) %in% c("Saturday", "Sunday"), "Weekend", "Weekday")
+
+par(mfrow = c(2,1))
+mspi <- aggregate(stepsNoNA ~ interval, df[df$daytype == "Weekday",], FUN = mean, na.action = na.omit)
+plot(mspi,
+     type = "l",
+     xlab = "Daily 5 Minute Time Interval",
+     ylab = "Average Number of Steps Taken",
+     main = "Average Number of Steps Taken per Weekday Intervals\nin each 5 Minute Interval over 60 Days"
+)
+grid(col = "dark grey")
+
+mspi <- aggregate(stepsNoNA ~ interval, df[df$daytype == "Weekend",], FUN = mean, na.action = na.omit)
+plot(mspi,
+     type = "l",
+     xlab = "Daily 5 Minute Time Interval",
+     ylab = "Average Number of Steps Taken",
+     main = "Average Number of Steps Taken per Weekend Intervals\nin each 5 Minute Interval over 60 Days"
+)
+grid(col = "dark grey")
+
+```
