@@ -4,9 +4,5 @@
 .Rapp.history
 
 # Data files
-*.rds
 *.zip
 *.csv
-
-# Automatically Generated Files
-steps.html
