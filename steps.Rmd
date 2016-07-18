@@ -63,7 +63,7 @@ magnitude of that variable with a vertical or horizontal bar.
 This step is looking for a histogram of the number of steps taken each day.
 This will show a graph of how many times each sum appears in the data.
 
-```{R}
+```{R Steps Per Day Histogram}
 hist(spd$steps,
      breaks = 20,
      main = "Frequency of Daily Step Counts",
@@ -71,9 +71,10 @@ hist(spd$steps,
      )
 grid(col = "dark grey")
 ```
+
 **Step 3: Calculate and report the mean and median of the total number of steps taken per day**
 
-```{R}
+```{R Mean Steps Per Day}
 meanSteps <- mean(spd$steps)
 medianSteps <- median(spd$steps)
 print(meanSteps)
@@ -91,14 +92,14 @@ averaged across all days (y-axis)**
 
 To do this, must first calculate the mean steps per interval:
 
-```{R}
+```{R Mean Steps Per Interval}
 mspi <- aggregate(steps ~ interval, df, FUN = mean, na.action = na.omit)
 ```
 
 Then we can plot a line showing the mean steps for each interval over all
 the intervals of the day.
 
-```{R}
+```{R Plot Mean Steps Per Interval}
 plot(mspi, type = "l",
      xlab = "Daily 5 Minute Time Interval",
      ylab = "Average Number of Steps Taken",
@@ -108,50 +109,136 @@ plot(mspi, type = "l",
 
 **Step 2: Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?**
 
-Find the interval where the average number of steps in that interval is
-the largest. 
+In the previous step, we calculated the mean steps per invterval (`mspi`).
+From that matrix, we can find the interval with the largext mean number
+of steps.
 
-print(paste("On average, interval ",
-            mspi[mspi$steps == max(mspi$steps),]$interval,
-            " has the largest, average number of steps at ",
-            mspi[mspi$steps == max(mspi$steps),]$steps,
-            sep = "")
+```{R Max Steps Per Interval}
+maxInterval <- mspi[mspi$steps == max(mspi$steps),]$interval
+maxSteps <- mspi[mspi$steps == max(mspi$steps),]$steps
+print(paste("On average, interval",
+            maxInterval,
+            "has the largest, average number of steps at",
+            format(maxSteps)
+            )
       )
+```
+Interval `r maxInterval` has the largest mean number of steps of any interval
+at `r format(maxSteps, digits = 6)`.
 
-print(paste("There are ", sum(is.na(df$steps)), " missing values.", sep = ""))
+###Imputing missing values
 
+**Step 1: Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with 𝙽𝙰s)**
+
+To calculate the number of missing values, we simply add up all the NAs
+in the data set.
+```{R Number Missing Values}
+missingValues <- sum(is.na(df$steps))
+print(paste("There are", missingValues, "missing values in the Data Set."))
+```
+There are `r missingValues` missing values in the data set. This is
+`r format((100*missingValues)/nrow(df), digits = 4)`% of the data set.
+For some calculations, this could introduce a significant error.
+
+**Step 2: Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.**
+
+There are many different strategies that could be used to impute the missing
+values. We could use the average for the day, but since we are also averaging
+across each interval, this could introduce a lot of error, and if one complete
+day's worth of data is missing, the day's average would not provide any value
+to introduce.
+
+I chose to impute the NA values by replacing these missing values with
+the average for that interval
+across all the days. Since there are a lot of intervals
+in a day, errors in this strategy should not adversely
+impact the daily averages, and the interval averages will not
+be impacted at all by adding additional average values into that mean.
+
+The impute strategy could be taken 1 step further by creating a weekend mean and
+a weekday mean for each interval and then replacing the NA values
+with the appropriate mean based on the day of the week of the missing NA.
+We could even go further by calculating a "day of the week" mean for each interval
+and then replacing the missing values by the appropriate interval mean based on
+the day of the week of the missing value. For the purposes of this assignment,
+I don't think that additional complexity will provide further insight into
+the data.
+
+**Step 3: Create a new dataset that is equal to the original dataset but with the missing data filled in.**
+
+So to implement the chosen strategy, I will add an additional column to the data
+frame that will hold the number of steps where the NA values have been replaced
+by the mean of the interval of the missing values. To do this, I will use a simple
+`ifelse` statement.
+
+```{R Impute NA Values}
 df$stepsNoNA <- ifelse(is.na(df$steps), mspi$steps[match(df$interval, mspi$interval)], df$steps)
+```
 
-spd <- aggregate(stepsNoNA ~ date, df, FUN = sum)
-hist(spd$stepsNoNA,
+**Step 4: Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?**
+
+To make a histogram of the number of steps taken each day, create
+a new structure holding the number of steps taken each day and plot it.
+```{R Plot Steps Per Day No NAs}
+spdNoNA <- aggregate(stepsNoNA ~ date, df, FUN = sum)
+hist(spdNoNA$stepsNoNA,
      breaks = 20,
      main = "Frequency of Daily Step Counts with Missing Data\nReplaced with Mean for that Interval",
      xlab = "Daily Step Count"
 )
 grid(col = "dark grey")
-print(paste("mean of steps (with NA replacement): ", mean(spd$stepsNoNA),
-            " median of steps (with NA replacement): ", median(spd$stepsNoNA),
-            sep = ""))
 
+print(paste("Mean of steps per day (with NA replacement): ", mean(spdNoNA$stepsNoNA)))
+print(paste("Median of steps (with NA replacement): ", median(spdNoNA$stepsNoNA)))
+```
+The only difference between this histogram and the histogram without the imputed
+NA values is the 10000 section (the section containing the daily step mean) has
+increased by 8 ticks. All the other bar heights remained the same.
+
+This happens because
+of the data. The data read in from the data file contains some missing values
+in intervals in 8 different days. Interestingly, every interval is missing in each
+of those 8 days, so the result of applying the impute strategy I did is that the
+mean number of steps taken per day for those missing days equals the mean steps taken
+over all the other days. The median becomes this value since the result of
+applying the impute strategy adds 8 days of mean steps per day values in the middle
+of the means so the median was very likely going to land on one of those 8 means.
+
+Given the distribution of the NA values, the mean and median with and without
+the NA values are not that different.
+
+###Are there differences in activity patterns between weekdays and weekends?
+
+**Step 1: Create a new factor variable in the dataset with two levels – “weekday”
+and “weekend” indicating whether a given date is a weekday or weekend day.**
+
+```{R Add daytype}
 df$daytype <- ifelse(weekdays(df$date) %in% c("Saturday", "Sunday"), "Weekend", "Weekday")
+```
 
+**Step 2: Make a panel plot containing a time series plot (i.e. 𝚝𝚢𝚙𝚎 = "𝚕") of 
+the 5-minute interval (x-axis) and the average number of steps taken, averaged across 
+all weekday days or weekend days (y-axis). See the README file in the GitHub 
+repository to see an example of what this plot should look like using simulated 
+data.**
+
+```{R daytype Comparison Plots}
 par(mfrow = c(2,1))
-mspi <- aggregate(stepsNoNA ~ interval, df[df$daytype == "Weekday",], FUN = mean, na.action = na.omit)
-plot(mspi,
+mspiNoNAwd <- aggregate(stepsNoNA ~ interval, df[df$daytype == "Weekday",], FUN = mean, na.action = na.omit)
+plot(mspiNoNAwd,
      type = "l",
      xlab = "Daily 5 Minute Time Interval",
-     ylab = "Average Number of Steps Taken",
-     main = "Average Number of Steps Taken per Weekday Intervals\nin each 5 Minute Interval over 60 Days"
+     ylab = "Mean Number of Steps Taken",
+     main = "Weekday Interval Mean Number of Steps"
 )
 grid(col = "dark grey")
 
-mspi <- aggregate(stepsNoNA ~ interval, df[df$daytype == "Weekend",], FUN = mean, na.action = na.omit)
-plot(mspi,
+mspiNoNAwe <- aggregate(stepsNoNA ~ interval, df[df$daytype == "Weekend",], FUN = mean, na.action = na.omit)
+plot(mspiNoNAwe,
      type = "l",
      xlab = "Daily 5 Minute Time Interval",
-     ylab = "Average Number of Steps Taken",
-     main = "Average Number of Steps Taken per Weekend Intervals\nin each 5 Minute Interval over 60 Days"
+     ylab = "Mean Number of Steps Taken",
+     main = "Weekend Interval Mean Number of Steps"
 )
 grid(col = "dark grey")
-
 ```
