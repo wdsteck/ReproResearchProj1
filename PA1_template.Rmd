@@ -1,4 +1,13 @@
-## Investigation of Steps taken over Time
+---
+title: "Reproducable Research Project 1\nInvestigation of Steps taken over Time"
+output:
+  html_document:
+    toc: true
+    keep_md: true
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+author: wdsteck
+---
+
 This analysis looks at data received from a step counter. Every 5 minutes,
 the counter records the date, an interval number and the number of steps taken
 within that interval.

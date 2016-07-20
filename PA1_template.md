@@ -1,4 +1,8 @@
-## Investigation of Steps taken over Time
+# Reproducable Research Project 1
+Investigation of Steps taken over Time
+wdsteck  
+`r format(Sys.time(), "%d %B, %Y")`  
+
 This analysis looks at data received from a step counter. Every 5 minutes,
 the counter records the date, an interval number and the number of steps taken
 within that interval.
@@ -75,7 +79,7 @@ hist(spd$steps,
 grid(col = "dark grey")
 ```
 
-![plot of chunk Steps Per Day Histogram](figure/Steps Per Day Histogram-1.png)
+![](PA1_template_files/figure-html/Steps Per Day Histogram-1.png)<!-- -->
 
 **Step 3: Calculate and report the mean and median of the total number of steps taken per day**
 
@@ -126,7 +130,7 @@ plot(mspi, type = "l",
 )
 ```
 
-![plot of chunk Plot Mean Steps Per Interval](figure/Plot Mean Steps Per Interval-1.png)
+![](PA1_template_files/figure-html/Plot Mean Steps Per Interval-1.png)<!-- -->
 
 **Step 2: Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?**
 
@@ -222,7 +226,7 @@ hist(spdNoNA$stepsNoNA,
 grid(col = "dark grey")
 ```
 
-![plot of chunk Plot Steps Per Day No NAs](figure/Plot Steps Per Day No NAs-1.png)
+![](PA1_template_files/figure-html/Plot Steps Per Day No NAs-1.png)<!-- -->
 
 ```r
 print(paste("Mean of steps per day (with NA replacement): ", mean(spdNoNA$stepsNoNA)))
@@ -293,4 +297,4 @@ plot(mspiNoNAwe,
 grid(col = "dark grey")
 ```
 
-![plot of chunk daytype Comparison Plots](figure/daytype Comparison Plots-1.png)
+![](PA1_template_files/figure-html/daytype Comparison Plots-1.png)<!-- -->
